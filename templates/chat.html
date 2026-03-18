@@ -1,81 +1,245 @@
-<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-
 <!DOCTYPE html>
-<html>
-	<head>
-		<title>Chatbot</title>
-		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css')}}"/>
-	</head>
-	
-	
-	<body>
-		<div class="container-fluid h-100">
-			<div class="row justify-content-center h-100">		
-				<div class="col-md-8 col-xl-6 chat">
-					<div class="card">
-						<div class="card-header msg_head">
-							<div class="d-flex bd-highlight">
-								<div class="img_cont">
-									<img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img">
-									<!-- <img src="https://www.prdistribution.com/spirit/uploads/pressreleases/2019/newsreleases/d83341deb75c4c4f6b113f27b1e42cd8-chatbot-florence-already-helps-thousands-of-patients-to-remember-their-medication.png" class="rounded-circle user_img"> -->
-									<span class="online_icon"></span>
-								</div>
-								<div class="user_info">
-									<span>Medical Chatbot</span>
-									<p>Ask me anything!</p>
-								</div>
-							</div>
-						</div>
-						<div id="messageFormeight" class="card-body msg_card_body">
-							
-							
-						</div>
-						<div class="card-footer">
-							<form id="messageArea" class="input-group">
-                                <input type="text" id="text" name="msg" placeholder="Type your message..." autocomplete="off" class="form-control type_msg" required/>
-								<div class="input-group-append">
-									<button type="submit" id="send" class="input-group-text send_btn"><i class="fas fa-location-arrow"></i></button>
-								</div>
-							</form>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<script>
-			$(document).ready(function() {
-				$("#messageArea").on("submit", function(event) {
-					const date = new Date();
-					const hour = date.getHours();
-					const minute = date.getMinutes();
-					const str_time = hour+":"+minute;
-					var rawText = $("#text").val();
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Care Bot — Your Health Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <span class="logo-text">Health Care Bot</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" onclick="newChat()">
+                    <i class="fas fa-plus"></i>
+                    <span>New Chat</span>
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="disclaimer">
+                    <i class="fas fa-info-circle"></i>
+                    <span>For informational purposes only. Not a substitute for professional medical advice.</span>
+                </div>
+            </div>
+        </aside>
 
-					var userHtml = '<div class="d-flex justify-content-end mb-4"><div class="msg_cotainer_send">' + rawText + '<span class="msg_time_send">'+ str_time + '</span></div><div class="img_cont_msg"><img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" class="rounded-circle user_img_msg"></div></div>';
-					
-					$("#text").val("");
-					$("#messageFormeight").append(userHtml);
+        <!-- Main Chat Area -->
+        <main class="chat-main">
+            <!-- Header -->
+            <header class="chat-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="header-info">
+                    <div class="bot-avatar-sm">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>Health Care Bot</h1>
+                        <span class="status">
+                            <span class="status-dot"></span>
+                            Online — Ready to help
+                        </span>
+                    </div>
+                </div>
+            </header>
 
-					$.ajax({
-						data: {
-							msg: rawText,	
-						},
-						type: "POST",
-						url: "/get",
-					}).done(function(data) {
-						var botHtml = '<div class="d-flex justify-content-start mb-4"><div class="img_cont_msg"><img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img_msg"></div><div class="msg_cotainer">' + data + '<span class="msg_time">' + str_time + '</span></div></div>';
-						$("#messageFormeight").append($.parseHTML(botHtml));
-					});
-					event.preventDefault();
-				});
-			});
-		</script>
-        
-    </body>
+            <!-- Messages -->
+            <div id="chatMessages" class="chat-messages">
+                <!-- Welcome Screen -->
+                <div id="welcomeScreen" class="welcome-screen">
+                    <div class="welcome-icon">
+                        <i class="fas fa-user-doctor"></i>
+                    </div>
+                    <h2>Hello! I'm Health Care Bot</h2>
+                    <p>Your AI-powered health assistant. Ask me about symptoms, conditions, medications, or general health topics.</p>
+                    <div class="quick-actions">
+                        <button class="quick-btn" onclick="sendQuickMessage('What are common symptoms of flu?')">
+                            <i class="fas fa-virus"></i>
+                            Flu Symptoms
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('How can I improve my sleep quality?')">
+                            <i class="fas fa-moon"></i>
+                            Sleep Tips
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('What are the benefits of regular exercise?')">
+                            <i class="fas fa-running"></i>
+                            Exercise Benefits
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('How to manage daily stress?')">
+                            <i class="fas fa-brain"></i>
+                            Stress Management
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-area">
+                <form id="messageArea" class="input-form">
+                    <div class="input-wrapper">
+                        <input
+                            type="text"
+                            id="text"
+                            name="msg"
+                            placeholder="Describe your symptoms or ask a health question..."
+                            autocomplete="off"
+                            required
+                        >
+                        <button type="submit" id="send" title="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <p class="input-hint">Health Care Bot can make mistakes. Always consult a healthcare professional for medical decisions.</p>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.querySelector('.chat-container').classList.toggle('sidebar-open');
+        }
+
+        function newChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = document.getElementById('welcomeScreen') ? chatMessages.innerHTML : '';
+            location.reload();
+        }
+
+        function getTimeString() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('chatMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addUserMessage(text) {
+            const welcome = document.getElementById('welcomeScreen');
+            if (welcome) welcome.remove();
+
+            const time = getTimeString();
+            const html = `
+                <div class="message user-message fade-in">
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <p>${escapeHtml(text)}</p>
+                        </div>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-avatar user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>`;
+            $('#chatMessages').append(html);
+            scrollToBottom();
+        }
+
+        function addBotMessage(text) {
+            const time = getTimeString();
+            const html = `
+                <div class="message bot-message fade-in">
+                    <div class="message-avatar bot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <p>${text}</p>
+                        </div>
+                        <span class="message-time">${time}</span>
+                    </div>
+                </div>`;
+            $('#chatMessages').append(html);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const html = `
+                <div class="message bot-message fade-in" id="typingIndicator">
+                    <div class="message-avatar bot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble typing-bubble">
+                            <div class="typing-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            $('#chatMessages').append(html);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            $('#typingIndicator').remove();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function sendQuickMessage(text) {
+            $('#text').val(text);
+            $('#messageArea').submit();
+        }
+
+        $(document).ready(function() {
+            $('#messageArea').on('submit', function(event) {
+                event.preventDefault();
+                const rawText = $('#text').val().trim();
+                if (!rawText) return;
+
+                addUserMessage(rawText);
+                $('#text').val('');
+                $('#send').prop('disabled', true);
+
+                showTypingIndicator();
+
+                $.ajax({
+                    data: { msg: rawText },
+                    type: 'POST',
+                    url: '/get',
+                }).done(function(data) {
+                    removeTypingIndicator();
+                    addBotMessage(data);
+                }).fail(function() {
+                    removeTypingIndicator();
+                    addBotMessage("I'm sorry, I'm having trouble connecting right now. Please try again in a moment.");
+                }).always(function() {
+                    $('#send').prop('disabled', false);
+                    $('#text').focus();
+                });
+            });
+
+            // Close sidebar on mobile when clicking outside
+            $('.chat-main').on('click', function() {
+                if (window.innerWidth <= 768) {
+                    document.querySelector('.chat-container').classList.remove('sidebar-open');
+                }
+            });
+        });
+    </script>
+</body>
 </html>
