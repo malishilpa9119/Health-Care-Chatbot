@@ -438,6 +438,75 @@ body, html {
     }
 }
 
+/* ===== Image Upload & Preview ===== */
+.image-preview {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin-bottom: 10px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    flex-shrink: 0;
+}
+
+.image-preview img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+    border-radius: var(--radius);
+}
+
+.image-preview button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.image-preview button:hover {
+    background: rgba(220, 38, 38, 0.9);
+}
+
+.upload-btn {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+.upload-btn:hover {
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.chat-image {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    display: block;
+}
+
 /* ===== Input Area ===== */
 .chat-input-area {
     padding: 16px 24px 20px;

@@ -90,14 +90,24 @@
             <!-- Input Area -->
             <div class="chat-input-area">
                 <form id="messageArea" class="input-form">
+                    <!-- Image Preview -->
+                    <div id="imagePreview" class="image-preview" style="display:none;">
+                        <img id="previewImg" src="" alt="Preview">
+                        <button type="button" id="removeImage" title="Remove image">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                     <div class="input-wrapper">
+                        <input type="file" id="imageInput" accept="image/*" style="display:none;">
+                        <button type="button" id="uploadBtn" class="upload-btn" title="Upload image for analysis">
+                            <i class="fas fa-camera"></i>
+                        </button>
                         <input
                             type="text"
                             id="text"
                             name="msg"
                             placeholder="Describe your symptoms or ask a health question..."
                             autocomplete="off"
-                            required
                         >
                         <button type="submit" id="send" title="Send message">
                             <i class="fas fa-paper-plane"></i>
@@ -200,15 +210,105 @@
             return div.innerHTML;
         }
 
+        let selectedImage = null;
+
         function sendQuickMessage(text) {
             $('#text').val(text);
             $('#messageArea').submit();
+        }
+
+        // Image upload handling
+        $('#uploadBtn').on('click', function() {
+            $('#imageInput').click();
+        });
+
+        $(document).on('change', '#imageInput', function() {
+            const file = this.files[0];
+            if (file) {
+                selectedImage = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#previewImg').attr('src', e.target.result);
+                    $('#imagePreview').show();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        $(document).on('click', '#removeImage', function() {
+            selectedImage = null;
+            $('#imageInput').val('');
+            $('#imagePreview').hide();
+            $('#previewImg').attr('src', '');
+        });
+
+        function addUserImageMessage(text, imageSrc) {
+            const welcome = document.getElementById('welcomeScreen');
+            if (welcome) welcome.remove();
+
+            const time = getTimeString();
+            const msgText = text ? `<p>${escapeHtml(text)}</p>` : '';
+            const html = `
+                <div class="message user-message fade-in">
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <img src="${imageSrc}" class="chat-image" alt="Uploaded image">
+                            ${msgText}
+                        </div>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-avatar user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>`;
+            $('#chatMessages').append(html);
+            scrollToBottom();
         }
 
         $(document).ready(function() {
             $('#messageArea').on('submit', function(event) {
                 event.preventDefault();
                 const rawText = $('#text').val().trim();
+
+                // If image is selected, send via image route
+                if (selectedImage) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        addUserImageMessage(rawText, e.target.result);
+                    };
+                    reader.readAsDataURL(selectedImage);
+
+                    const formData = new FormData();
+                    formData.append('image', selectedImage);
+                    formData.append('msg', rawText);
+
+                    $('#text').val('');
+                    selectedImage = null;
+                    $('#imageInput').val('');
+                    $('#imagePreview').hide();
+                    $('#send').prop('disabled', true);
+
+                    showTypingIndicator();
+
+                    $.ajax({
+                        data: formData,
+                        type: 'POST',
+                        url: '/analyze-image',
+                        processData: false,
+                        contentType: false,
+                    }).done(function(data) {
+                        removeTypingIndicator();
+                        addBotMessage(data);
+                    }).fail(function() {
+                        removeTypingIndicator();
+                        addBotMessage("I'm sorry, I couldn't analyze the image. Please try again.");
+                    }).always(function() {
+                        $('#send').prop('disabled', false);
+                        $('#text').focus();
+                    });
+                    return;
+                }
+
                 if (!rawText) return;
 
                 addUserMessage(rawText);
