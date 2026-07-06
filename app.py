@@ -1,7 +1,8 @@
 from flask import Flask, render_template, jsonify, request, session
 from src.helper import download_hugging_face_embeddings
 from langchain_pinecone import PineconeVectorStore
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -9,9 +10,12 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from dotenv import load_dotenv
 from openai import OpenAI
+from src.agent import build_medical_agent, ask_agent
+from src.retriever import build_hybrid_retriever
 from src.prompt import *
 import os
 import base64
+import uuid
 
 
 app = Flask(__name__)
@@ -21,10 +25,10 @@ app.secret_key = os.urandom(24)
 load_dotenv()
 
 PINECONE_API_KEY=os.environ.get('PINECONE_API_KEY')
-OPENAI_API_KEY=os.environ.get('OPENAI_API_KEY')
+GROQ_API_KEY=os.environ.get('GROQ_API_KEY')
 
 os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["GROQ_API_KEY"] = GROQ_API_KEY
 
 
 embeddings = download_hugging_face_embeddings()
@@ -36,9 +40,14 @@ docsearch = PineconeVectorStore.from_existing_index(
 )
 
 
-retriever = docsearch.as_retriever(search_type="similarity", search_kwargs={"k":3})
+# retriever = docsearch.as_retriever(search_type="similarity", search_kwargs={"k":3})
+retriever = build_hybrid_retriever(index_name=index_name, embeddings=embeddings)
 
-chatModel = ChatOpenAI(model="gpt-4o-mini")
+# chatModel = ChatOpenAI(model="gpt-4o-mini")
+chatModel = ChatGroq(model_name="llama-3.3-70b-versatile")
+
+# build the LangGraph agent
+agent = build_medical_agent(retriever, chatModel)
 
 contextualize_q_prompt = ChatPromptTemplate.from_messages(
     [
@@ -74,29 +83,12 @@ def index():
     session.clear()
     return render_template('chat.html')
 
-
-
-@app.route("/get", methods=["GET", "POST"])
+@app.route("/get", methods=["POST"])
 def chat():
     msg = request.form["msg"]
-    print(msg)
-
-    chat_history = []
-    for entry in session.get("chat_history", []):
-        chat_history.append(HumanMessage(content=entry["human"]))
-        chat_history.append(AIMessage(content=entry["ai"]))
-
-    response = rag_chain.invoke({"input": msg, "chat_history": chat_history})
-    answer = response["answer"]
-    print("Response : ", answer)
-
-    if "chat_history" not in session:
-        session["chat_history"] = []
-    session["chat_history"].append({"human": msg, "ai": answer})
-    session.modified = True
-
+    thread_id = request.form.get("thread_id") or "default"
+    answer = ask_agent(agent, msg, thread_id)
     return str(answer)
-
 
 @app.route("/analyze-image", methods=["POST"])
 def analyze_image():

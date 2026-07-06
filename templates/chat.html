@@ -1,345 +1,397 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Health Care Bot — Your Health Assistant</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Healthcare Clinic Assistant</title>
+
+    <!-- Fonts + icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <!-- App styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
+
 <body>
-    <div class="chat-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-heartbeat"></i>
-                    </div>
-                    <span class="logo-text">Health Care Bot</span>
-                </div>
+<div class="app" id="app">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar">
+        <div class="sidebar__header">
+            <div class="logo">
+                <div class="logo__icon"><i class="fa-solid fa-heart-pulse"></i></div>
+                <span class="logo__text">Health Care Bot</span>
             </div>
-            <nav class="sidebar-nav">
-                <button class="nav-btn active" onclick="newChat()">
-                    <i class="fas fa-plus"></i>
-                    <span>New Chat</span>
+        </div>
+
+        <div class="sidebar__body">
+            <button class="btn-new-chat" onclick="newChat()">
+                <i class="fa-solid fa-plus"></i> New Chat
+            </button>
+
+            <!-- Chat history is injected here by JS -->
+            <div class="history" id="history"></div>
+        </div>
+
+        <div class="sidebar__footer">
+            <div class="credit">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Built with LangGraph, RAG &amp; Memory. For informational purposes only.</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============ MAIN ============ -->
+    <main class="main">
+
+        <!-- Header -->
+        <header class="header">
+            <button class="header__toggle" onclick="document.getElementById('app').classList.toggle('sidebar-open')">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="header__avatar"><i class="fa-solid fa-user-doctor"></i></div>
+            <div class="header__meta">
+                <span class="header__title">Healthcare Clinic Assistant</span>
+                <span class="header__status"><span class="status-dot"></span> Online — Ready to help</span>
+            </div>
+            <span class="header__badge"><i class="fa-solid fa-circle-check"></i> Online</span>
+        </header>
+
+        <!-- Messages (welcome screen or bubbles injected by JS) -->
+        <div class="messages" id="messages"></div>
+
+        <!-- Composer -->
+        <div class="composer">
+            <div class="composer__box">
+                <button class="composer__upload" title="Upload image"
+                        onclick="document.getElementById('imageInput').click()">
+                    <i class="fa-solid fa-image"></i>
                 </button>
-            </nav>
-            <div class="sidebar-footer">
-                <div class="disclaimer">
-                    <i class="fas fa-info-circle"></i>
-                    <span>For informational purposes only. Not a substitute for professional medical advice.</span>
-                </div>
-            </div>
-        </aside>
+                <input type="file" id="imageInput" accept="image/*" hidden onchange="sendImage(this)" />
 
-        <!-- Main Chat Area -->
-        <main class="chat-main">
-            <!-- Header -->
-            <header class="chat-header">
-                <button class="menu-toggle" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
+                <input type="text" id="input" class="composer__input"
+                       placeholder="Ask about appointments, schedules, or refill policies…"
+                       onkeydown="if (event.key === 'Enter') send()" />
+
+                <button class="composer__send" onclick="send()">
+                    <i class="fa-solid fa-paper-plane"></i>
                 </button>
-                <div class="header-info">
-                    <div class="bot-avatar-sm">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div class="header-text">
-                        <h1>Health Care Bot</h1>
-                        <span class="status">
-                            <span class="status-dot"></span>
-                            Online — Ready to help
-                        </span>
-                    </div>
-                </div>
-            </header>
+            </div>
+            <div class="composer__hint">
+                Health Care Bot can make mistakes. Always consult a healthcare professional for medical decisions.
+            </div>
+        </div>
 
-            <!-- Messages -->
-            <div id="chatMessages" class="chat-messages">
-                <!-- Welcome Screen -->
-                <div id="welcomeScreen" class="welcome-screen">
-                    <div class="welcome-icon">
-                        <i class="fas fa-user-doctor"></i>
-                    </div>
-                    <h2>Hello! I'm Health Care Bot</h2>
-                    <p>Your AI-powered health assistant. Ask me about symptoms, conditions, medications, or general health topics.</p>
-                    <div class="quick-actions">
-                        <button class="quick-btn" onclick="sendQuickMessage('What are common symptoms of flu?')">
-                            <i class="fas fa-virus"></i>
-                            Flu Symptoms
-                        </button>
-                        <button class="quick-btn" onclick="sendQuickMessage('How can I improve my sleep quality?')">
-                            <i class="fas fa-moon"></i>
-                            Sleep Tips
-                        </button>
-                        <button class="quick-btn" onclick="sendQuickMessage('What are the benefits of regular exercise?')">
-                            <i class="fas fa-running"></i>
-                            Exercise Benefits
-                        </button>
-                        <button class="quick-btn" onclick="sendQuickMessage('How to manage daily stress?')">
-                            <i class="fas fa-brain"></i>
-                            Stress Management
-                        </button>
-                    </div>
+        <!-- Info section: feature cards + panels -->
+        <div class="info">
+            <div class="features">
+                <div class="feature">
+                    <div class="feature__icon"><i class="fa-solid fa-file-lines"></i></div>
+                    <h3>RAG Pipeline</h3>
+                    <p>Semantic + BM25 retrieval, re-ranked</p>
+                </div>
+                <div class="feature">
+                    <div class="feature__icon"><i class="fa-solid fa-brain"></i></div>
+                    <h3>Memory</h3>
+                    <p>Remembers the whole conversation</p>
+                </div>
+                <div class="feature">
+                    <div class="feature__icon"><i class="fa-solid fa-robot"></i></div>
+                    <h3>Agent</h3>
+                    <p>Retriever tool for accurate answers</p>
+                </div>
+                <div class="feature">
+                    <div class="feature__icon"><i class="fa-solid fa-diagram-project"></i></div>
+                    <h3>LangGraph</h3>
+                    <p>Workflow with defined nodes</p>
+                </div>
+                <div class="feature">
+                    <div class="feature__icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h3>Safe &amp; Reliable</h3>
+                    <p>Guardrails, docs-only answers</p>
                 </div>
             </div>
 
-            <!-- Input Area -->
-            <div class="chat-input-area">
-                <form id="messageArea" class="input-form">
-                    <!-- Image Preview -->
-                    <div id="imagePreview" class="image-preview" style="display:none;">
-                        <img id="previewImg" src="" alt="Preview">
-                        <button type="button" id="removeImage" title="Remove image">
-                            <i class="fas fa-times"></i>
-                        </button>
+            <div class="info__panels">
+                <!-- Sample test questions (click to ask) -->
+                <div class="panel">
+                    <h4>Test Questions (Sample)</h4>
+                    <ul class="questions" id="questions">
+                        <li onclick="ask(this)"><i class="fa-solid fa-circle-check"></i>How can I book an appointment?</li>
+                        <li onclick="ask(this)"><i class="fa-solid fa-circle-check"></i>What time should I arrive before my appointment?</li>
+                        <li onclick="ask(this)"><i class="fa-solid fa-circle-check"></i>How long should I fast before a blood sugar test?</li>
+                        <li onclick="ask(this)"><i class="fa-solid fa-circle-check"></i>Can I drink water while fasting for the test?</li>
+                        <li onclick="ask(this)"><i class="fa-solid fa-circle-check"></i>What should I do in case of a medical emergency?</li>
+                    </ul>
+                </div>
+
+                <!-- Fallback example -->
+                <div class="panel panel--fallback">
+                    <h4><i class="fa-solid fa-triangle-exclamation"></i> Fallback Example</h4>
+                    <div class="fallback__q">Q: Do you provide home visits by doctors?</div>
+                    <div class="fallback__a">
+                        A: I could not find this information in the clinic documents.
+                        Please contact the clinic staff for confirmation.
                     </div>
-                    <div class="input-wrapper">
-                        <input type="file" id="imageInput" accept="image/*" style="display:none;">
-                        <button type="button" id="uploadBtn" class="upload-btn" title="Upload image for analysis">
-                            <i class="fas fa-camera"></i>
-                        </button>
-                        <input
-                            type="text"
-                            id="text"
-                            name="msg"
-                            placeholder="Describe your symptoms or ask a health question..."
-                            autocomplete="off"
-                        >
-                        <button type="submit" id="send" title="Send message">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                    <p class="input-hint">Health Care Bot can make mistakes. Always consult a healthcare professional for medical decisions.</p>
-                </form>
+                </div>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
+</div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script>
-        function toggleSidebar() {
-            document.querySelector('.chat-container').classList.toggle('sidebar-open');
+
+<script>
+/* ============================================================
+   Chat app logic
+   - Each chat has its own thread_id, sent to /get so the
+     backend (LangGraph) keeps a separate memory per chat.
+   - Chats persist in the browser (localStorage), grouped by day.
+   ============================================================ */
+
+const STORE_KEY = 'hcbot_chats_v1';
+
+let chats   = {};     // { id: { id, title, ts, messages: [ {role, text, time, alert} ] } }
+let current = null;   // id of the active chat
+
+
+/* ---------- small helpers ---------- */
+function uid() {
+    return 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+}
+
+function nowTime() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function escapeHtml(str) {
+    return (str || '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+}
+
+function loadStore() {
+    try { chats = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
+    catch (e) { chats = {}; }
+}
+
+function saveStore() {
+    localStorage.setItem(STORE_KEY, JSON.stringify(chats));
+}
+
+
+/* ---------- chat lifecycle ---------- */
+function newChat() {
+    const id = uid();
+    chats[id] = { id, title: 'New chat', ts: Date.now(), messages: [] };
+    current = id;
+    saveStore();
+    renderHistory();
+    renderMessages();
+    document.getElementById('input').focus();
+}
+
+function openChat(id) {
+    current = id;
+    renderHistory();
+    renderMessages();
+}
+
+
+/* ---------- rendering: sidebar history ---------- */
+function renderHistory() {
+    const box   = document.getElementById('history');
+    const ids   = Object.keys(chats).sort((a, b) => chats[b].ts - chats[a].ts);
+    const today = new Date().toDateString();
+    const yday  = new Date(Date.now() - 86400000).toDateString();
+
+    let html = '';
+    let lastGroup = '';
+
+    ids.forEach(id => {
+        const c = chats[id];
+        const day = new Date(c.ts).toDateString();
+        const group = day === today ? 'Today'
+                    : day === yday  ? 'Yesterday'
+                    : new Date(c.ts).toLocaleDateString();
+
+        if (group !== lastGroup) {
+            html += `<div class="history__group">${group}</div>`;
+            lastGroup = group;
         }
 
-        function newChat() {
-            const chatMessages = document.getElementById('chatMessages');
-            chatMessages.innerHTML = document.getElementById('welcomeScreen') ? chatMessages.innerHTML : '';
-            location.reload();
-        }
+        const active = id === current ? ' history__item--active' : '';
+        html += `<div class="history__item${active}" onclick="openChat('${id}')">${escapeHtml(c.title)}</div>`;
+    });
 
-        function getTimeString() {
-            const now = new Date();
-            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
+    box.innerHTML = html || '<div class="history__group">No chats yet</div>';
+}
 
-        function scrollToBottom() {
-            const container = document.getElementById('chatMessages');
-            container.scrollTop = container.scrollHeight;
-        }
 
-        function addUserMessage(text) {
-            const welcome = document.getElementById('welcomeScreen');
-            if (welcome) welcome.remove();
+/* ---------- rendering: messages ---------- */
+function renderMessages() {
+    const box = document.getElementById('messages');
+    const chat = chats[current];
 
-            const time = getTimeString();
-            const html = `
-                <div class="message user-message fade-in">
-                    <div class="message-content">
-                        <div class="message-bubble">
-                            <p>${escapeHtml(text)}</p>
-                        </div>
-                        <span class="message-time">${time}</span>
-                    </div>
-                    <div class="message-avatar user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                </div>`;
-            $('#chatMessages').append(html);
-            scrollToBottom();
-        }
+    if (!chat || chat.messages.length === 0) {
+        box.innerHTML = welcomeTemplate();
+        return;
+    }
 
-        function addBotMessage(text) {
-            const time = getTimeString();
-            const html = `
-                <div class="message bot-message fade-in">
-                    <div class="message-avatar bot-avatar">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div class="message-content">
-                        <div class="message-bubble">
-                            <p>${text}</p>
-                        </div>
-                        <span class="message-time">${time}</span>
-                    </div>
-                </div>`;
-            $('#chatMessages').append(html);
-            scrollToBottom();
-        }
+    box.innerHTML = chat.messages.map(bubbleTemplate).join('');
+    box.scrollTop = box.scrollHeight;
+}
 
-        function showTypingIndicator() {
-            const html = `
-                <div class="message bot-message fade-in" id="typingIndicator">
-                    <div class="message-avatar bot-avatar">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div class="message-content">
-                        <div class="message-bubble typing-bubble">
-                            <div class="typing-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            $('#chatMessages').append(html);
-            scrollToBottom();
-        }
+function welcomeTemplate() {
+    return `
+      <div class="welcome">
+        <div class="welcome__icon"><i class="fa-solid fa-user-doctor"></i></div>
+        <h2>Hello! I'm Health Care Bot</h2>
+        <p>Your AI-powered clinic assistant. Ask me about appointments, doctor
+           availability, timings, fees, lab tests, or refill policies.</p>
+        <div class="welcome__actions">
+          <button class="action-card" onclick="send('How can I book an appointment?')">
+            <i class="fa-solid fa-calendar-check"></i> Book an appointment
+          </button>
+          <button class="action-card" onclick="send('What are the clinic timings?')">
+            <i class="fa-solid fa-clock"></i> Clinic timings
+          </button>
+          <button class="action-card" onclick="send('How long should I fast before a blood test?')">
+            <i class="fa-solid fa-flask-vial"></i> Lab test fasting
+          </button>
+          <button class="action-card" onclick="send('What is the medicine refill policy?')">
+            <i class="fa-solid fa-prescription-bottle-medical"></i> Refill policy
+          </button>
+        </div>
+      </div>`;
+}
 
-        function removeTypingIndicator() {
-            $('#typingIndicator').remove();
-        }
+function bubbleTemplate(m) {
+    const isBot  = m.role === 'bot';
+    const side   = isBot ? 'message--bot' : 'message--user';
+    const icon   = isBot ? 'fa-robot' : 'fa-user';
+    const alert  = m.alert ? ' message__bubble--alert' : '';
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+    return `
+      <div class="message ${side}">
+        <div class="message__avatar"><i class="fa-solid ${icon}"></i></div>
+        <div class="message__body">
+          <div class="message__bubble${alert}">${escapeHtml(m.text)}</div>
+          <div class="message__time">${m.time || ''}</div>
+        </div>
+      </div>`;
+}
 
-        let selectedImage = null;
+function typingTemplate() {
+    return `
+      <div class="message message--bot" id="typing">
+        <div class="message__avatar"><i class="fa-solid fa-robot"></i></div>
+        <div class="message__body">
+          <div class="message__bubble is-typing">
+            <div class="dots"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      </div>`;
+}
 
-        function sendQuickMessage(text) {
-            $('#text').val(text);
-            $('#messageArea').submit();
-        }
 
-        // Image upload handling
-        $('#uploadBtn').on('click', function() {
-            $('#imageInput').click();
-        });
+/* ---------- sending a text message ---------- */
+async function send(preset) {
+    const inputEl = document.getElementById('input');
+    const text = (preset || inputEl.value).trim();
+    if (!text) return;
+    if (!current) newChat();
+    inputEl.value = '';
 
-        $(document).on('change', '#imageInput', function() {
-            const file = this.files[0];
-            if (file) {
-                selectedImage = file;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    $('#previewImg').attr('src', e.target.result);
-                    $('#imagePreview').show();
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+    const chat = chats[current];
 
-        $(document).on('click', '#removeImage', function() {
-            selectedImage = null;
-            $('#imageInput').val('');
-            $('#imagePreview').hide();
-            $('#previewImg').attr('src', '');
-        });
+    // First message becomes the chat title
+    if (chat.messages.length === 0) chat.title = text.slice(0, 42);
 
-        function addUserImageMessage(text, imageSrc) {
-            const welcome = document.getElementById('welcomeScreen');
-            if (welcome) welcome.remove();
+    chat.messages.push({ role: 'user', text, time: nowTime() });
+    saveStore();
+    renderHistory();
+    renderMessages();
 
-            const time = getTimeString();
-            const msgText = text ? `<p>${escapeHtml(text)}</p>` : '';
-            const html = `
-                <div class="message user-message fade-in">
-                    <div class="message-content">
-                        <div class="message-bubble">
-                            <img src="${imageSrc}" class="chat-image" alt="Uploaded image">
-                            ${msgText}
-                        </div>
-                        <span class="message-time">${time}</span>
-                    </div>
-                    <div class="message-avatar user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                </div>`;
-            $('#chatMessages').append(html);
-            scrollToBottom();
-        }
+    // show typing indicator
+    const box = document.getElementById('messages');
+    box.insertAdjacentHTML('beforeend', typingTemplate());
+    box.scrollTop = box.scrollHeight;
 
-        $(document).ready(function() {
-            $('#messageArea').on('submit', function(event) {
-                event.preventDefault();
-                const rawText = $('#text').val().trim();
+    try {
+        const form = new FormData();
+        form.append('msg', text);
+        form.append('thread_id', current);        // per-chat memory key
 
-                // If image is selected, send via image route
-                if (selectedImage) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        addUserImageMessage(rawText, e.target.result);
-                    };
-                    reader.readAsDataURL(selectedImage);
+        const res = await fetch('/get', { method: 'POST', body: form });
+        const answer = await res.text();
 
-                    const formData = new FormData();
-                    formData.append('image', selectedImage);
-                    formData.append('msg', rawText);
+        // highlight guardrail / fallback replies
+        const alert = /emergency|not able to give diagnoses|could not find this information/i.test(answer);
+        chat.messages.push({ role: 'bot', text: answer, time: nowTime(), alert });
+    } catch (e) {
+        chat.messages.push({ role: 'bot', text: 'Sorry, something went wrong. Please try again.', time: nowTime(), alert: true });
+    }
 
-                    $('#text').val('');
-                    selectedImage = null;
-                    $('#imageInput').val('');
-                    $('#imagePreview').hide();
-                    $('#send').prop('disabled', true);
+    document.getElementById('typing')?.remove();
+    saveStore();
+    renderMessages();
+}
 
-                    showTypingIndicator();
+/* click a sample question */
+function ask(li) {
+    send(li.textContent.trim());
+}
 
-                    $.ajax({
-                        data: formData,
-                        type: 'POST',
-                        url: '/analyze-image',
-                        processData: false,
-                        contentType: false,
-                    }).done(function(data) {
-                        removeTypingIndicator();
-                        addBotMessage(data);
-                    }).fail(function() {
-                        removeTypingIndicator();
-                        addBotMessage("I'm sorry, I couldn't analyze the image. Please try again.");
-                    }).always(function() {
-                        $('#send').prop('disabled', false);
-                        $('#text').focus();
-                    });
-                    return;
-                }
 
-                if (!rawText) return;
+/* ---------- sending an image ---------- */
+async function sendImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!current) newChat();
 
-                addUserMessage(rawText);
-                $('#text').val('');
-                $('#send').prop('disabled', true);
+    const chat = chats[current];
+    if (chat.messages.length === 0) chat.title = 'Image analysis';
 
-                showTypingIndicator();
+    chat.messages.push({ role: 'user', text: '🖼️ Uploaded an image for analysis', time: nowTime() });
+    saveStore();
+    renderHistory();
+    renderMessages();
 
-                $.ajax({
-                    data: { msg: rawText },
-                    type: 'POST',
-                    url: '/get',
-                }).done(function(data) {
-                    removeTypingIndicator();
-                    addBotMessage(data);
-                }).fail(function() {
-                    removeTypingIndicator();
-                    addBotMessage("I'm sorry, I'm having trouble connecting right now. Please try again in a moment.");
-                }).always(function() {
-                    $('#send').prop('disabled', false);
-                    $('#text').focus();
-                });
-            });
+    const box = document.getElementById('messages');
+    box.insertAdjacentHTML('beforeend', typingTemplate());
+    box.scrollTop = box.scrollHeight;
 
-            // Close sidebar on mobile when clicking outside
-            $('.chat-main').on('click', function() {
-                if (window.innerWidth <= 768) {
-                    document.querySelector('.chat-container').classList.remove('sidebar-open');
-                }
-            });
-        });
-    </script>
+    try {
+        const form = new FormData();
+        form.append('image', file);
+        form.append('msg', '');
+
+        const res = await fetch('/analyze-image', { method: 'POST', body: form });
+        const answer = await res.text();
+        chat.messages.push({ role: 'bot', text: answer, time: nowTime() });
+    } catch (e) {
+        chat.messages.push({ role: 'bot', text: 'Could not analyze the image. Please try again.', time: nowTime(), alert: true });
+    }
+
+    input.value = '';
+    document.getElementById('typing')?.remove();
+    saveStore();
+    renderMessages();
+}
+
+
+/* ---------- boot ---------- */
+loadStore();
+const existing = Object.keys(chats);
+if (existing.length) {
+    current = existing.sort((a, b) => chats[b].ts - chats[a].ts)[0];
+} else {
+    newChat();
+}
+renderHistory();
+renderMessages();
+</script>
 </body>
 </html>
